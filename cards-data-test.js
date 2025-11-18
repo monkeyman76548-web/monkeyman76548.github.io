@@ -19,7 +19,6 @@ export default [
 { href: './html/Snow Rider 3d/index.html', imgSrc: 'snow rider 3d.jpeg', name: 'Snow Rider 3d' , 'page': 5, 'id': 961 },
 { href: './html/Slow roads/index.html', imgSrc: 'slow roads.jpeg', name: 'Slow roads' , 'page': 5, 'id': 954 },
 { href: './html/Sleepy knight/index.html', imgSrc: 'sleepy knight.jpeg', name: 'Sleepy knight' , 'page': 5, 'id': 950 },
-{ href: './html/Sandboxels/index.html', imgSrc: 'sandboxels.jpeg', name: 'Sandboxels' , 'page': 5, 'id': 940 },
 { href: './html/Rubix/index.html', imgSrc: 'rubix.jpeg', name: 'Rubix' , 'page': 5, 'id': 939 },
 { href: './html/Rodha/index.html', imgSrc: 'rodha.jpeg', name: 'Rodha' , 'page': 5, 'id': 931 },
 { href: './html/Orcs vs elves/index.html', imgSrc: 'orcs vs elves.jpeg', name: 'Orcs vs elves' , 'page': 5, 'id': 924 },
