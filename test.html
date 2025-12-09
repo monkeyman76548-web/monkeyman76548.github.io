@@ -1,330 +1,748 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>StrongDog XP — Test</title>
-<link rel="icon" type="image/x-icon" href="/img/favicon.ico"/>
-<style>
-:root{--ff:'Nunito',Arial,sans-serif;--bg:#2e2e2e}
-*{box-sizing:border-box}
-body{font-family:var(--ff);margin:0;background:var(--bg);color:#fff}
-.navbar{background:#333;color:#fff;padding:10px 12px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:1000;flex-wrap:wrap}
-.menu-icon{font-size:1.6rem;cursor:pointer}
-.logo{margin-left:auto;margin-right:auto;color:#fff;font-weight:800;text-decoration:none}
-.logo .xp{color:orange}
-.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.controls select,.controls input{background:#222;border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:6px 8px}
-.controls label{display:flex;align-items:center;gap:6px;font-size:.9rem}
-.tag{font-size:.85rem;padding:4px 8px;border:1px solid rgba(255,255,255,.25);border-radius:999px;background:#1f1f1f}
-.search-container{position:relative;margin-left:auto}
-.search-bar{padding:.6rem .9rem;border:none;border-radius:12px;width:260px;background:rgba(0,0,0,.35);color:#fff}
-.search-results{position:absolute;right:0;top:46px;background:rgba(30,30,30,.95);border-radius:12px;width:300px;display:none;overflow:hidden;z-index:1000;box-shadow:0 10px 30px rgba(0,0,0,.6)}
-.search-results a{display:flex;align-items:center;gap:10px;padding:10px 12px;text-decoration:none;color:#fff;border-bottom:1px solid rgba(255,255,255,.1)}
-.search-results img{width:52px;height:52px;object-fit:cover;border-radius:8px}
-.games-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:10px}
-.card{display:block;width:120px;aspect-ratio:1/1;border-radius:12px;overflow:hidden;position:relative;box-shadow:0 5px 18px rgba(0,0,0,.4);transition:transform .25s ease, box-shadow .25s ease}
-.card:hover{transform:scale(1.06) translateY(-6px);box-shadow:0 10px 26px rgba(255,98,0,.35)}
-.card img{width:100%;height:100%;object-fit:cover}
-.card figcaption{position:absolute;left:0;right:0;bottom:0;padding:8px 6px;background:linear-gradient(to top,rgba(0,0,0,.9),transparent);text-align:center;font-weight:700;opacity:0;transform:translateY(100%);transition:all .25s}
-.card:hover figcaption{opacity:1;transform:translateY(0)}
-.card-buttons{display:flex;justify-content:center;gap:8px;margin-top:6px}
-.card-buttons button{background:transparent;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:2px 6px;font-size:.95rem;cursor:pointer}
-.btn-check{color:#28a745}
-.btn-delete{color:#dc3545}
-.drawer{position:fixed;top:0;left:0;height:100vh;width:260px;background:#1f1f1f;transform:translateX(-100%);transition:transform .25s ease;z-index:1100;padding:20px 16px;display:flex;flex-direction:column;gap:10px}
-.drawer.open{transform:translateX(0)}
-.drawer a{color:#fff;text-decoration:none;padding:12px;border-radius:10px;background:#2b2b2b}
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:1090}
-.overlay.show{opacity:1;pointer-events:auto}
-.loader{display:flex;justify-content:center;align-items:center;height:40vh;font-weight:700;letter-spacing:.5px;opacity:.85}
-.hidden{display:none}
-.busy{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:2000}
-.busy.show{display:flex}
-.spinner{width:56px;height:56px;border-radius:50%;border:6px solid rgba(255,255,255,.25);border-top-color:#fff;animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.banner{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#222;border:1px solid rgba(255,255,255,.2);padding:10px 14px;border-radius:10px;display:none;z-index:2100;max-width:92vw}
-.banner.show{display:block}
-@media (max-width:768px){.card{width:100px}.logo{order:3;margin:0}}
-</style>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
-<script>
-const firebaseConfig={apiKey:"AIzaSyBh-VnGiP4qZD0r14gfn9dr77GwtslpTqU",authDomain:"strongdog-auth.firebaseapp.com",databaseURL:"https://strongdog-auth-default-rtdb.firebaseio.com",projectId:"strongdog-auth",storageBucket:"strongdog-auth.appspot.com",messagingSenderId:"936276282572",appId:"1:936276282572:web:a802b7f609381ff9428669",measurementId:"G-0YLTCV2MMS"};
-firebase.initializeApp(firebaseConfig);
-window.auth=firebase.auth();
-window.db=firebase.firestore();
-window.functions=firebase.app().functions("us-central1");
-</script>
-<script type="module">
-  import games from "./cards-data-test.js";
-  
-  const siteMapping={
-  "strongdog.onrender.com":["https://strongdog.onrender.com","https://strongdog2.onrender.com","https://strongdog3.onrender.com","https://strongdog4.onrender.com","https://strongdog5.onrender.com"],
-  "strongdog2.onrender.com":["https://strongdog.onrender.com","https://strongdog2.onrender.com","https://strongdog3.onrender.com","https://strongdog4.onrender.com","https://strongdog5.onrender.com"],
-  "stroongdog.netlify.app":["https://stroongdog.netlify.app","https://stroongdog2.netlify.app","https://stroongdog3.netlify.app","https://stroongdog4.netlify.app","https://stroongdog5.netlify.app"],
-  "stroongdog2.netlify.app":["https://stroongdog.netlify.app","https://stroongdog2.netlify.app","https://stroongdog3.netlify.app","https://stroongdog4.netlify.app","https://stroongdog5.netlify.app"],
-  "mathcord.netlify.app":["https://mathcord.netlify.app","https://mathcord2.netlify.app","https://mathcord3.netlify.app","https://mathcord4.netlify.app","https://mathcord5.netlify.app"]
-  };
-  
-  function normId(s){return (s||"").toLowerCase().replace(/\s+/g,"").replace(/[^a-z0-9]/g,"")}
-  function clean(p){return (p||"").replace(/^\.?\//,"")}
-  function baseFor(page){
-    if(!page||page<2)return "";
-    const h=location.hostname;
-    let m=null;
-    for(const k in siteMapping){if(h.includes(k)){m=siteMapping[k];break}}
-    if(m&&m[page-1])return m[page-1].replace(/\/$/,"")+"/";
-    if(page===2)return "/strongdog2/";
-    if(page===3)return "/strongdog3/";
-    if(page===4)return "/strongdog4/";
-    if(page===5)return "/strongdog5/";
-    return "/";
-  }
-  function isAbs(u){return /^https?:\/\//i.test(u||"")}
-  function hrefFor(h,page){const s=clean(h);return isAbs(s)?s:baseFor(page)+s}
-  function imgFor(img,page){const s=clean(img);if(isAbs(s))return s;const b=baseFor(page);return b+(s.startsWith("img/")?s:"img/"+s)}
-  
-  const disabledSet=new Set();
-  let ready=false,inflight=false;
-  
-  const byId=new Map();
-  for(const g of games){byId.set(normId(g.name),g)}
-  
-  function makeCard(g){
-  const to=hrefFor(g.href,g.page);
-  const img=imgFor(g.imgSrc,g.page);
-  const id=normId(g.name);
-  return `
-  <div class="card-container" data-game-id="${id}">
-    <a href="${to}" class="card"><img loading="lazy" src="${img}" alt="${g.name}"><figcaption>${g.name}</figcaption></a>
-    <div class="card-buttons">
-      <button class="btn-check" data-game-name="${g.name}" data-game-id="${id}" title="Approve">Approve</button>
-      <button class="btn-delete" data-game-name="${g.name}" data-game-id="${id}" title="Report">Deny</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>StrongDog XP — Test</title>
+    <link rel="icon" type="image/x-icon" href="/img/favicon.ico" />
+    <style>
+      :root {
+        --ff: "Nunito", Arial, sans-serif;
+        --bg: #2e2e2e;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: var(--ff);
+        margin: 0;
+        background: var(--bg);
+        color: #fff;
+      }
+      .navbar {
+        background: #333;
+        color: #fff;
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        flex-wrap: wrap;
+      }
+      .menu-icon {
+        font-size: 1.6rem;
+        cursor: pointer;
+      }
+      .logo {
+        margin-left: auto;
+        margin-right: auto;
+        color: #fff;
+        font-weight: 800;
+        text-decoration: none;
+      }
+      .logo .xp {
+        color: orange;
+      }
+      .controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .controls select,
+      .controls input {
+        background: #222;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+        border-radius: 8px;
+        padding: 6px 8px;
+      }
+      .controls label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.9rem;
+      }
+      .tag {
+        font-size: 0.85rem;
+        padding: 4px 8px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 999px;
+        background: #1f1f1f;
+      }
+      .search-container {
+        position: relative;
+        margin-left: auto;
+      }
+      .search-bar {
+        padding: 0.6rem 0.9rem;
+        border: none;
+        border-radius: 12px;
+        width: 260px;
+        background: rgba(0, 0, 0, 0.35);
+        color: #fff;
+      }
+      .search-results {
+        position: absolute;
+        right: 0;
+        top: 46px;
+        background: rgba(30, 30, 30, 0.95);
+        border-radius: 12px;
+        width: 300px;
+        display: none;
+        overflow: hidden;
+        z-index: 1000;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      }
+      .search-results a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        text-decoration: none;
+        color: #fff;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .search-results img {
+        width: 52px;
+        height: 52px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+      .games-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        padding: 10px;
+      }
+      .card {
+        display: block;
+        width: 120px;
+        aspect-ratio: 1/1;
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 5px 18px rgba(0, 0, 0, 0.4);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+      }
+      .card:hover {
+        transform: scale(1.06) translateY(-6px);
+        box-shadow: 0 10px 26px rgba(255, 98, 0, 0.35);
+      }
+      .card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .card figcaption {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 8px 6px;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+        text-align: center;
+        font-weight: 700;
+        opacity: 0;
+        transform: translateY(100%);
+        transition: all 0.25s;
+      }
+      .card:hover figcaption {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .card-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 6px;
+      }
+      .card-buttons button {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 8px;
+        padding: 2px 6px;
+        font-size: 0.95rem;
+        cursor: pointer;
+      }
+      .btn-check {
+        color: #28a745;
+      }
+      .btn-delete {
+        color: #dc3545;
+      }
+      .drawer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 260px;
+        background: #1f1f1f;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        z-index: 1100;
+        padding: 20px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .drawer.open {
+        transform: translateX(0);
+      }
+      .drawer a {
+        color: #fff;
+        text-decoration: none;
+        padding: 12px;
+        border-radius: 10px;
+        background: #2b2b2b;
+      }
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+        z-index: 1090;
+      }
+      .overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .loader {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 40vh;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        opacity: 0.85;
+      }
+      .hidden {
+        display: none;
+      }
+      .busy {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 2000;
+      }
+      .busy.show {
+        display: flex;
+      }
+      .spinner {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: 6px solid rgba(255, 255, 255, 0.25);
+        border-top-color: #fff;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .banner {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 16px;
+        background: #222;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 10px 14px;
+        border-radius: 10px;
+        display: none;
+        z-index: 2100;
+        max-width: 92vw;
+      }
+      .banner.show {
+        display: block;
+      }
+      @media (max-width: 768px) {
+        .card {
+          width: 100px;
+        }
+        .logo {
+          order: 3;
+          margin: 0;
+        }
+      }
+    </style>
+
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyBh-VnGiP4qZD0r14gfn9dr77GwtslpTqU",
+        authDomain: "strongdog-auth.firebaseapp.com",
+        databaseURL: "https://strongdog-auth-default-rtdb.firebaseio.com",
+        projectId: "strongdog-auth",
+        storageBucket: "strongdog-auth.appspot.com",
+        messagingSenderId: "936276282572",
+        appId: "1:936276282572:web:a802b7f609381ff9428669",
+        measurementId: "G-0YLTCV2MMS",
+      };
+      firebase.initializeApp(firebaseConfig);
+      window.auth = firebase.auth();
+      window.db = firebase.firestore();
+      window.functions = firebase.app().functions("us-central1");
+    </script>
+
+    <script type="module">
+      import games from "./cards-data-test.js";
+
+      const siteMapping = {
+        "strongdog.onrender.com": [
+          "https://strongdog.onrender.com",
+          "https://strongdog2.onrender.com",
+          "https://strongdog3.onrender.com",
+          "https://strongdog4.onrender.com",
+          "https://strongdog5.onrender.com",
+        ],
+        "strongdog2.onrender.com": [
+          "https://strongdog.onrender.com",
+          "https://strongdog2.onrender.com",
+          "https://strongdog3.onrender.com",
+          "https://strongdog4.onrender.com",
+          "https://strongdog5.onrender.com",
+        ],
+        "stroongdog.netlify.app": [
+          "https://stroongdog.netlify.app",
+          "https://stroongdog2.netlify.app",
+          "https://stroongdog3.netlify.app",
+          "https://stroongdog4.netlify.app",
+          "https://stroongdog5.netlify.app",
+        ],
+        "stroongdog2.netlify.app": [
+          "https://stroongdog.netlify.app",
+          "https://stroongdog2.netlify.app",
+          "https://stroongdog3.netlify.app",
+          "https://stroongdog4.netlify.app",
+          "https://stroongdog5.netlify.app",
+        ],
+        "mathcord.netlify.app": [
+          "https://mathcord.netlify.app",
+          "https://mathcord2.netlify.app",
+          "https://mathcord3.netlify.app",
+          "https://mathcord4.netlify.app",
+          "https://mathcord5.netlify.app",
+        ],
+      };
+
+      function normId(s) {
+        return (s || "")
+          .toLowerCase()
+          .replace(/\s+/g, "")
+          .replace(/[^a-z0-9]/g, "");
+      }
+      function clean(p) {
+        return (p || "").replace(/^\.?\//, "");
+      }
+      function baseFor(page) {
+        if (!page || page < 2) return "";
+        const h = location.hostname;
+        let m = null;
+        for (const k in siteMapping) {
+          if (h.includes(k)) {
+            m = siteMapping[k];
+            break;
+          }
+        }
+        if (m && m[page - 1]) return m[page - 1].replace(/\/$/, "") + "/";
+        if (page === 2) return "/strongdog2/";
+        if (page === 3) return "/strongdog3/";
+        if (page === 4) return "/strongdog4/";
+        if (page === 5) return "/strongdog5/";
+        return "/";
+      }
+      function isAbs(u) {
+        return /^https?:\/\//i.test(u || "");
+      }
+      function hrefFor(h, page) {
+        const s = clean(h);
+        return isAbs(s) ? s : baseFor(page) + s;
+      }
+      function imgFor(img, page) {
+        const s = clean(img);
+        return isAbs(s)
+          ? s
+          : baseFor(page) + (s.startsWith("img/") ? s : "img/" + s);
+      }
+
+      const disabledSet = new Set();
+      let ready = false,
+        inflight = false;
+
+      const byId = new Map();
+      for (const g of games) {
+        byId.set(normId(g.name), g);
+      }
+
+      function makeCard(g) {
+        const to = hrefFor(g.href, g.page);
+        const img = imgFor(g.imgSrc, g.page);
+        const id = normId(g.name);
+        return `
+<div class="card-container" data-game-id="${id}">
+  <a href="${to}" class="card"><img loading="lazy" src="${img}" alt="${g.name}"><figcaption>${g.name}</figcaption></a>
+  <div class="card-buttons">
+    <button class="btn-check" data-game-name="${g.name}" data-game-id="${id}">Approve</button>
+    <button class="btn-delete" data-game-name="${g.name}" data-game-id="${id}">Deny</button>
+  </div>
+</div>`;
+      }
+
+      function filtered(q) {
+        let list = games.filter((g) => !disabledSet.has(normId(g.name)));
+        if (!q) return list;
+        const s = (q || "").toLowerCase().trim();
+        return list.filter((g) => g.name.toLowerCase().includes(s));
+      }
+
+      function renderAll(list) {
+        grid.innerHTML = list.map(makeCard).join("");
+        wireButtons();
+      }
+
+      function renderSearch(q) {
+        if (!ready) {
+          searchBox.style.display = "none";
+          searchBox.innerHTML = "";
+          return;
+        }
+        const res = filtered(q).slice(0, 12);
+        if (!q || res.length === 0) {
+          searchBox.style.display = "none";
+          searchBox.innerHTML = "";
+          return;
+        }
+        searchBox.innerHTML = res
+          .map(
+            (g) =>
+              `<a href="${hrefFor(g.href, g.page)}"><img src="${imgFor(
+                g.imgSrc,
+                g.page
+              )}"><span>${g.name}</span></a>`
+          )
+          .join("");
+        searchBox.style.display = "block";
+      }
+
+      function setBusy(on) {
+        inflight = on;
+        busy.classList.toggle("show", on);
+        document
+          .querySelectorAll(".btn-check,.btn-delete")
+          .forEach((b) => (b.disabled = on));
+      }
+
+      async function ensureSignedIn() {
+        if (firebase.auth().currentUser) return true;
+        try {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          provider.setCustomParameters({ prompt: "select_account" });
+          await firebase
+            .auth()
+            .setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+          await firebase.auth().signInWithPopup(provider);
+          return true;
+        } catch (e) {
+          toast("Sign-in blocked or failed. Allow popups and try again.");
+          return false;
+        }
+      }
+
+      function toast(msg) {
+        banner.textContent = msg;
+        banner.classList.add("show");
+        setTimeout(() => banner.classList.remove("show"), 5000);
+      }
+
+      function currentUserEmail() {
+        const u = firebase.auth().currentUser;
+        return u ? u.email || u.uid : "Unknown";
+      }
+
+      function buildPayload(rec) {
+        const strip = stripParens.checked;
+        const rawName = strip
+          ? rec.name.replace(/\(.*?\)/g, "").trim()
+          : rec.name;
+        const override = (nameOverride.value || "").trim();
+        const finalName = override || rawName;
+        const keyStyle = keySelect.value;
+        const dataset = datasetSelect.value;
+        const base = {
+          href: rec.href,
+          imgSrc: rec.imgSrc,
+          page: rec.page ?? null,
+          source: "test",
+          dataset,
+        };
+        if (keyStyle === "name") return { name: finalName, ...base };
+        return { gameName: finalName, ...base };
+      }
+
+      async function sendLog(payload) {
+        await fetch(
+          "https://script.google.com/macros/s/AKfycbwJiMu6QMPBUgiY4PUwpPNkZOadxw-uaiLHVsz5FxkiTnbHvB-Ck3G3Gu8LIyJCyFlY4Q/exec",
+          {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+      }
+
+      async function callApprove(rec) {
+        const fn = window.functions.httpsCallable("approveGameCallable");
+        const payload = {
+          ...buildPayload(rec),
+          action: "approve",
+          user: currentUserEmail(),
+          timestamp: new Date().toISOString(),
+        };
+        try {
+          await fn(payload);
+          await sendLog(payload);
+          return { ok: true, name: payload.gameName || payload.name };
+        } catch (err) {
+          await sendLog(payload);
+          return {
+            ok: false,
+            name: payload.gameName || payload.name,
+            error: err.message,
+            payload,
+          };
+        }
+      }
+
+      async function callReport(rec, issue) {
+        const payload = {
+          timestamp: new Date().toISOString(),
+          ...buildPayload(rec),
+          issue,
+          action: "deny",
+          user: currentUserEmail(),
+        };
+        await sendLog(payload);
+        return { ok: true, name: payload.gameName || payload.name };
+      }
+
+      async function approveFlow(id, displayName, btn) {
+        const rec = byId.get(id);
+        if (!rec) throw new Error("Game not found");
+        const okAuth = await ensureSignedIn();
+        if (!okAuth) throw new Error("Not signed in");
+        const res = await callApprove(rec);
+        await firebase
+          .firestore()
+          .collection("cards")
+          .add({ gameName: res.name, disable: true });
+        btn.closest(".card-container")?.remove();
+        toast("Approved ✓");
+      }
+
+      async function reportFlow(id, displayName, btn) {
+        const rec = byId.get(id);
+        if (!rec) throw new Error("Game not found");
+        const okAuth = await ensureSignedIn();
+        if (!okAuth) throw new Error("Not signed in");
+        const issue = prompt(`Reason for denying ${rec.name}?`);
+        if (!issue) return;
+        const res = await callReport(rec, issue);
+        await firebase
+          .firestore()
+          .collection("cards")
+          .add({ gameName: res.name, disable: true });
+        btn.closest(".card-container")?.remove();
+        toast("Denied ✓");
+      }
+
+      function wireButtons() {
+        document.querySelectorAll(".btn-check").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            if (inflight) return;
+            try {
+              setBusy(true);
+              await approveFlow(btn.dataset.gameId, btn.dataset.gameName, btn);
+            } catch (err) {
+              toast("Error: " + err.message);
+            } finally {
+              setBusy(false);
+            }
+          });
+        });
+        document.querySelectorAll(".btn-delete").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            if (inflight) return;
+            try {
+              setBusy(true);
+              await reportFlow(btn.dataset.gameId, btn.dataset.gameName, btn);
+            } catch (err) {
+              toast("Error: " + err.message);
+            } finally {
+              setBusy(false);
+            }
+          });
+        });
+      }
+
+      function subscribeDisabled() {
+        firebase
+          .firestore()
+          .collection("cards")
+          .onSnapshot((s) => {
+            disabledSet.clear();
+            s.forEach((d) => {
+              const v = d.data() || {};
+              if (v.disable) disabledSet.add(normId(v.gameName || ""));
+            });
+            ready = true;
+            loader.classList.add("hidden");
+            grid.classList.remove("hidden");
+            search.disabled = false;
+            renderAll(filtered(""));
+          });
+      }
+
+      const grid = document.getElementById("allGame");
+      const search = document.getElementById("searchInput");
+      const searchBox = document.getElementById("searchResults");
+      const drawer = document.getElementById("drawer");
+      const overlay = document.getElementById("overlay");
+      const menuIcon = document.getElementById("menuIcon");
+      const loader = document.getElementById("loader");
+      const busy = document.getElementById("busy");
+      const banner = document.getElementById("banner");
+      const datasetSelect = document.getElementById("dataset");
+      const keySelect = document.getElementById("keySelect");
+      const stripParens = document.getElementById("stripParens");
+      const nameOverride = document.getElementById("nameOverride");
+      const authBtn = document.getElementById("authBtn");
+
+      firebase.auth().onAuthStateChanged(async (u) => {      
+        if (!u) {
+          location.href = "index.html";
+          return;
+        }
+        try {
+          const snap = await firebase.firestore()
+            .collection("access")
+            .doc(u.uid)
+            .get();
+          if (!snap.exists) {
+            location.href = "index.html";
+            return;
+          }
+          const data = snap.data();
+          if (data.tester === true) {
+            return;
+          }
+          location.href = "index.html";
+        } catch (e) {
+          location.href = "index.html";
+        }
+      });
+
+      document.addEventListener("DOMContentLoaded", () => {
+        grid.classList.add("hidden");
+        search.disabled = true;
+        subscribeDisabled();
+        authBtn.addEventListener("click", () => ensureSignedIn());
+        search.addEventListener("input", (e) => renderSearch(e.target.value));
+        document.addEventListener("click", (e) => {
+          if (!searchBox.contains(e.target) && e.target !== search)
+            searchBox.style.display = "none";
+        });
+
+        function toggleMenu(open) {
+          drawer.classList.toggle("open", open);
+          overlay.classList.toggle("show", open);
+        }
+
+        menuIcon.addEventListener("click", () =>
+          toggleMenu(!drawer.classList.contains("open"))
+        );
+        overlay.addEventListener("click", () => toggleMenu(false));
+        document
+          .querySelectorAll(".drawer a")
+          .forEach((a) => a.addEventListener("click", () => toggleMenu(false)));
+      });
+    </script>
+  </head>
+
+  <body>
+    <div
+      style="
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        cursor: pointer;
+        z-index: 1000;
+      "
+      onclick="location.href='secret-menu.html'"
+    ></div>
+
+    <div class="navbar">
+      <div class="menu-icon" id="menuIcon">&#9776;</div>
+      <span class="tag" id="signedIn">Not signed in</span>
+      <div class="controls">
+        <select id="dataset">
+          <option value="cards-data-test.js" selected>
+            cards-data-test.js
+          </option>
+          <option value="cards-data.js">cards-data.js</option>
+        </select>
+        <select id="keySelect">
+          <option value="gameName" selected>gameName</option>
+          <option value="name">name</option>
+        </select>
+        <label><input type="checkbox" id="stripParens" />strip ( ... )</label>
+        <input id="nameOverride" placeholder="optional name override" />
+        <button id="authBtn" class="tag">Sign in</button>
+      </div>
+      <a href="index.html" class="logo">StrongDog<span class="xp">XP</span></a>
+      <div class="search-container">
+        <input
+          id="searchInput"
+          class="search-bar"
+          placeholder="Search…"
+          autocomplete="off"
+        />
+        <div id="searchResults" class="search-results"></div>
+      </div>
     </div>
-  </div>`}
-  
-  function filtered(q){
-  let list=games.filter(g=>!disabledSet.has(normId(g.name)));
-  if(!q)return list;
-  const s=(q||"").toLowerCase().trim();
-  return list.filter(g=>g.name.toLowerCase().includes(s));
-  }
-  
-  function renderAll(list){grid.innerHTML=list.map(makeCard).join("");wireButtons()}
-  function renderSearch(q){
-  if(!ready){searchBox.style.display="none";searchBox.innerHTML="";return}
-  const res=filtered(q).slice(0,12);
-  if(!q||res.length===0){searchBox.style.display="none";searchBox.innerHTML="";return}
-  searchBox.innerHTML=res.map(g=>`<a href="${hrefFor(g.href,g.page)}"><img src="${imgFor(g.imgSrc,g.page)}"><span>${g.name}</span></a>`).join("");
-  searchBox.style.display="block";
-  }
-  
-  function setBusy(on){
-  inflight=on;
-  busy.classList.toggle("show",on);
-  document.querySelectorAll(".btn-check,.btn-delete").forEach(b=>b.disabled=on);
-  }
-  
-  async function ensureSignedIn(){
-  if(firebase.auth().currentUser) return true;
-  try{
-  const provider=new firebase.auth.GoogleAuthProvider();
-  provider.setCustomParameters({prompt:"select_account"});
-  await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-  await firebase.auth().signInWithPopup(provider);
-  return true;
-  }catch(e){toast("Sign-in blocked or failed. Allow popups and try again.");return false;}
-  }
-  
-  function toast(msg){
-  banner.textContent=msg;
-  banner.classList.add("show");
-  setTimeout(()=>banner.classList.remove("show"),5000);
-  }
-  
-  function currentUserEmail(){
-  const u=firebase.auth().currentUser;
-  return u?(u.email||u.uid):"Unknown";
-  }
-  
-  function buildPayload(rec){
-  const strip=stripParens.checked;
-  const rawName=strip?rec.name.replace(/\(.*?\)/g,"").trim():rec.name;
-  const override=(nameOverride.value||"").trim();
-  const finalName=override||rawName;
-  const keyStyle=keySelect.value;
-  const dataset=datasetSelect.value;
-  const base={href:rec.href,imgSrc:rec.imgSrc,page:rec.page??null,source:"test",dataset};
-  if(keyStyle==="name") return {name:finalName,...base};
-  return {gameName:finalName,...base};
-  }
-  
-  async function sendLog(payload){
-  await fetch("https://script.google.com/macros/s/AKfycbwJiMu6QMPBUgiY4PUwpPNkZOadxw-uaiLHVsz5FxkiTnbHvB-Ck3G3Gu8LIyJCyFlY4Q/exec",{
-  method:"POST",
-  mode:"no-cors",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify(payload)
-  });
-  }
-  
-  async function callApprove(rec){
-  const fn=window.functions.httpsCallable("approveGameCallable");
-  const payload={
-  ...buildPayload(rec),
-  action:"approve",
-  user:currentUserEmail(),
-  timestamp:new Date().toISOString()
-  };
-  try{
-  await fn(payload);
-  await sendLog(payload);
-  return {ok:true,name:(payload.gameName||payload.name)};
-  }catch(err){
-  await sendLog(payload);
-  return {ok:false,name:(payload.gameName||payload.name),error:err.message,payload};
-  }
-  }
-  
-  async function callReport(rec,issue){
-  const payload={
-  timestamp:new Date().toISOString(),
-  ...buildPayload(rec),
-  issue,
-  action:"deny",
-  user:currentUserEmail()
-  };
-  await sendLog(payload);
-  return {ok:true,name:(payload.gameName||payload.name)};
-  }
-  
-  async function approveFlow(id,displayName,btn){
-  const rec=byId.get(id);
-  if(!rec) throw new Error("Game not found");
-  const okAuth=await ensureSignedIn();
-  if(!okAuth) throw new Error("Not signed in");
-  const res=await callApprove(rec);
-  await firebase.firestore().collection("cards").add({gameName:res.name,disable:true});
-  btn.closest(".card-container")?.remove();
-  toast("Approved ✓");
-  }
-  
-  async function reportFlow(id,displayName,btn){
-  const rec=byId.get(id);
-  if(!rec) throw new Error("Game not found");
-  const okAuth=await ensureSignedIn();
-  if(!okAuth) throw new Error("Not signed in");
-  const issue=prompt(`Reason for denying ${rec.name}?`);
-  if(!issue) return;
-  const res=await callReport(rec,issue);
-  await firebase.firestore().collection("cards").add({gameName:res.name,disable:true});
-  btn.closest(".card-container")?.remove();
-  toast("Denied ✓");
-  }
-  
-  function wireButtons(){
-  document.querySelectorAll(".btn-check").forEach(btn=>{
-  btn.addEventListener("click",async ()=>{
-  if(inflight)return;
-  try{setBusy(true);await approveFlow(btn.dataset.gameId,btn.dataset.gameName,btn)}
-  catch(err){toast("Error: "+err.message)}
-  finally{setBusy(false)}
-  });
-  });
-  document.querySelectorAll(".btn-delete").forEach(btn=>{
-  btn.addEventListener("click",async ()=>{
-  if(inflight)return;
-  try{setBusy(true);await reportFlow(btn.dataset.gameId,btn.dataset.gameName,btn)}
-  catch(err){toast("Error: "+err.message)}
-  finally{setBusy(false)}
-  });
-  });
-  }
-  
-  function subscribeDisabled(){
-  firebase.firestore().collection("cards").onSnapshot(s=>{
-  disabledSet.clear();
-  s.forEach(d=>{const v=d.data()||{};if(v.disable)disabledSet.add(normId(v.gameName||""))});
-  ready=true;
-  loader.classList.add("hidden");
-  grid.classList.remove("hidden");
-  search.disabled=false;
-  renderAll(filtered(""));
-  });
-  }
-  
-  const grid=document.getElementById("allGame");
-  const search=document.getElementById("searchInput");
-  const searchBox=document.getElementById("searchResults");
-  const drawer=document.getElementById("drawer");
-  const overlay=document.getElementById("overlay");
-  const menuIcon=document.getElementById("menuIcon");
-  const loader=document.getElementById("loader");
-  const busy=document.getElementById("busy");
-  const banner=document.getElementById("banner");
-  const datasetSelect=document.getElementById("dataset");
-  const keySelect=document.getElementById("keySelect");
-  const stripParens=document.getElementById("stripParens");
-  const nameOverride=document.getElementById("nameOverride");
-  const authBtn=document.getElementById("authBtn");
-  
-  firebase.auth().onAuthStateChanged(u=>{
-  document.getElementById("signedIn").textContent=u?(u.email||"Signed in"):"Not signed in";
-  authBtn.textContent=u?"Signed in":"Sign in";
-  authBtn.disabled=!!u;
-  });
-  
-  document.addEventListener("DOMContentLoaded",()=>{
-  grid.classList.add("hidden");
-  search.disabled=true;
-  subscribeDisabled();
-  authBtn.addEventListener("click",()=>ensureSignedIn());
-  search.addEventListener("input",e=>renderSearch(e.target.value));
-  document.addEventListener("click",e=>{if(!searchBox.contains(e.target)&&e.target!==search)searchBox.style.display="none"});
-  function toggleMenu(open){drawer.classList.toggle("open",open);overlay.classList.toggle("show",open)}
-  menuIcon.addEventListener("click",()=>toggleMenu(!drawer.classList.contains("open")));
-  overlay.addEventListener("click",()=>toggleMenu(false));
-  document.querySelectorAll(".drawer a").forEach(a=>a.addEventListener("click",()=>toggleMenu(false)));
-  });
-  </script>  
-</head>
-<body>
-<div style="position:absolute;top:10px;right:10px;width:10px;height:10px;border-radius:50%;cursor:pointer;z-index:1000" onclick="location.href='secret-menu.html'"></div>
-<div class="navbar">
-<div class="menu-icon" id="menuIcon">&#9776;</div>
-<span class="tag" id="signedIn">Not signed in</span>
-<div class="controls">
-  <select id="dataset" title="Dataset">
-    <option value="cards-data-test.js" selected>cards-data-test.js</option>
-    <option value="cards-data.js">cards-data.js</option>
-  </select>
-  <select id="keySelect" title="Name key">
-    <option value="gameName" selected>gameName</option>
-    <option value="name">name</option>
-  </select>
-  <label><input type="checkbox" id="stripParens" />strip ( ... )</label>
-  <input id="nameOverride" placeholder="optional name override" />
-  <button id="authBtn" class="tag">Sign in</button>
-</div>
-<a href="index.html" class="logo">StrongDog<span class="xp">XP</span></a>
-<div class="search-container">
-<input id="searchInput" class="search-bar" placeholder="Search…" autocomplete="off"/>
-<div id="searchResults" class="search-results"></div>
-</div>
-</div>
-<aside id="drawer" class="drawer">
-<a href="index.html">Home</a>
-<a href="test.html">Moderate (Test)</a>
-<a href="secret-menu.html">Secret</a>
-</aside>
-<div id="overlay" class="overlay"></div>
-<div id="loader" class="loader">Loading games…</div>
-<div id="busy" class="busy"><div class="spinner" aria-label="Loading"></div></div>
-<div id="banner" class="banner"></div>
-<h2 style="text-align:center;margin:10px 0"><strong>All</strong></h2>
-<div id="allGame" class="games-grid"></div>
-</body>
+
+    <aside id="drawer" class="drawer">
+      <a href="index.html">Home</a>
+      <a href="test.html">Moderate (Test)</a>
+      <a href="secret-menu.html">Secret</a>
+    </aside>
+
+    <div id="overlay" class="overlay"></div>
+    <div id="loader" class="loader">Loading games…</div>
+    <div id="busy" class="busy">
+      <div class="spinner" aria-label="Loading"></div>
+    </div>
+    <div id="banner" class="banner"></div>
+
+    <h2 style="text-align: center; margin: 10px 0"><strong>All</strong></h2>
+
+    <div id="allGame" class="games-grid"></div>
+  </body>
 </html>
